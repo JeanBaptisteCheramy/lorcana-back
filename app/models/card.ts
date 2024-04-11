@@ -1,4 +1,6 @@
-import { BaseModel, column } from '@adonisjs/lucid/orm'
+import Deck from '#models/deck'
+import { BaseModel, column, manyToMany } from '@adonisjs/lucid/orm'
+import type { ManyToMany } from '@adonisjs/lucid/types/relations'
 import { DateTime } from 'luxon'
 
 export default class Card extends BaseModel {
@@ -67,6 +69,14 @@ export default class Card extends BaseModel {
 
   @column()
   declare Card_Variants: string
+
+  @manyToMany(() => Deck, {
+    localKey: 'id',
+    pivotForeignKey: 'card_id',
+    relatedKey: 'id',
+    pivotRelatedForeignKey: 'deck_id',
+  })
+  declare decks: ManyToMany<typeof Deck>
 
   @column.dateTime({ autoCreate: true })
   declare createdAt: DateTime

@@ -9,7 +9,6 @@ export const createDeckValidator = vine.compile(
 export const updateDeckValidator = vine.compile(
   vine.object({
     name: vine.string().trim().maxLength(100),
-    cards: vine.array(vine.number().withoutDecimals().positive()).optional(),
-    cardsToDelete: vine.array(vine.number().withoutDecimals().positive()).optional(),
+    cardsId: vine.number().positive().withoutDecimals(),
   })
 )
