@@ -36,7 +36,7 @@ export default class DecksController {
         deck.name = payload.name
       }
 
-      // await deck.save()
+      await deck.save()
       response.status(200).json({
         message: 'Deck updated sucessfully',
         deck: deck.name,

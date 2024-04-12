@@ -9,7 +9,7 @@ export default class AuthController {
     const payload = await createUserValidator.validate(data)
     const user = await User.create(payload)
     const userCollection = await Collection.create({ userId: user.id })
-    response.status(200).json({ user: user, userCollection: userCollection })
+    response.status(200).json({ user: user, collection: userCollection })
   }
 
   async login({ auth, request, response }: HttpContext) {

@@ -6,7 +6,7 @@ export default class Collection extends BaseModel {
   declare id: number
 
   @column()
-  declare cards: number[]
+  declare cards: JSON
 
   @column()
   declare userId: number
