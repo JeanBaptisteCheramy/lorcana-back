@@ -38,39 +38,63 @@ export default class DecksController {
       // Vérifier si l'utilisateur est autorisé à modifier ce deck
       if (auth.user?.id === deck.userId) {
         // Récupérer les données de la requête (nom du deck et les cartes à ajouter)
-        const data = request.only(['name', 'cards'])
+        const data = request.only(['name', 'cardsToAdd', 'cardsToDelete'])
         const payload = await updateDeckValidator.validate(data)
 
         // Parcourir les cartes à ajouter au deck
-        for (const cardPayload of payload.cards) {
-          // Vérifier si la carte est déjà présente dans le deck
-          const existingCard = deckCards.find(
-            (cardFromDeck) => cardFromDeck.card_id === cardPayload.id
-          )
-          if (existingCard) {
-            // Vérifier si l'ajout de la carte ne dépasse pas la limite de 4 cartes du même type dans le deck
-            if (existingCard.quantity + cardPayload.quantity < 4) {
-              existingCard.quantity += cardPayload.quantity
-              await db
-                .from('card_deck')
-                .where('id', existingCard.id)
-                .update({ quantity: existingCard.quantity })
+        if (payload.cardsToAdd) {
+          for (const cardToAddPayload of payload.cardsToAdd) {
+            // Vérifier si la carte est déjà présente dans le deck
+            const existingCard = deckCards.find(
+              (cardFromDeck) => cardFromDeck.card_id === cardToAddPayload.id
+            )
+            if (existingCard) {
+              // Vérifier si l'ajout de la carte ne dépasse pas la limite de 4 cartes du même type dans le deck
+              if (existingCard.quantity + cardToAddPayload.quantity <= 4) {
+                existingCard.quantity += cardToAddPayload.quantity
+                await db
+                  .from('card_deck')
+                  .where('id', existingCard.id)
+                  .update({ quantity: existingCard.quantity })
+                res = true
+                message = 'Deck updated successfully'
+              } else {
+                res = false
+                message = 'Maximum 4 of the same card in a deck'
+                return response.status(500).send({ message })
+              }
+            } else {
+              // Ajouter la carte au deck
+              await db.table('card_deck').insert({
+                card_id: cardToAddPayload.id,
+                deck_id: deck.id,
+                quantity: cardToAddPayload.quantity,
+              })
+              res = true
+              message = 'Deck updated successfully'
+            }
+          }
+        }
+        if (payload.cardsToDelete) {
+          for (const cardToDeletePayload of payload.cardsToDelete) {
+            const existingCard = deckCards.find(
+              (cardFromDeck) => cardFromDeck.card_id === cardToDeletePayload.id
+            )
+            if (existingCard) {
+              if (existingCard.quantity - cardToDeletePayload.quantity <= 0) {
+                await db.from('card_deck').where('id', existingCard.id).delete()
+              } else {
+                await db
+                  .from('card_deck')
+                  .where('id', existingCard.id)
+                  .update({ quantity: existingCard.quantity - cardToDeletePayload.quantity })
+              }
               res = true
               message = 'Deck updated successfully'
             } else {
               res = false
-              message = 'Maximum 4 of the same card in a deck'
-              return response.status(500).send({ message })
+              message = 'No card to delete'
             }
-          } else {
-            // Ajouter la carte au deck
-            await db.table('card_deck').insert({
-              card_id: cardPayload.id,
-              deck_id: deck.id,
-              quantity: cardPayload.quantity,
-            })
-            res = true
-            message = 'Deck updated successfully'
           }
         }
 
@@ -94,7 +118,7 @@ export default class DecksController {
     } catch (error) {
       // Gérer les erreurs
       console.error(error)
-      return response.status(500).send({ message: 'An error occurred' })
+      return response.status(500).send({ message: message })
     }
   }
   // DELETE DECK --------------------------------------------------------------------------------
