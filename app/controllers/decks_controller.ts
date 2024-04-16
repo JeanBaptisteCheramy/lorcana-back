@@ -1,7 +1,7 @@
-import Card from '#models/card'
 import Deck from '#models/deck'
 import { createDeckValidator, updateDeckValidator } from '#validators/validate_deck'
 import { HttpContext } from '@adonisjs/core/http'
+import db from '@adonisjs/lucid/services/db'
 
 export default class DecksController {
   // CREATE DECK --------------------------------------------------------------------------------
@@ -22,33 +22,86 @@ export default class DecksController {
   // UPDATE DECK --------------------------------------------------------------------------------
 
   async updateDeck({ auth, request, response }: HttpContext) {
-    const deck = await Deck.findByOrFail('id', request.param('id'))
+    let res: boolean = false
+    let message: string = ''
 
-    if (auth.user?.id === deck.userId) {
-      const data = request.only(['name', 'cardsId'])
-      const payload = await updateDeckValidator.validate(data)
-      const card = await Card.findByOrFail('id', payload.cardsId)
-      console.log(card)
+    try {
+      // Récupérer le deck correspondant à l'ID fourni dans la requête
+      const deck = await Deck.findByOrFail('id', request.param('id'))
 
-      await deck.related('cards').attach([card.id])
+      // Récupérer les cartes déjà présentes dans le deck depuis la base de données
+      const deckCards = await db
+        .from('card_deck')
+        .select('id', 'card_id', 'quantity', 'deck_id')
+        .where('deck_id', request.param('id'))
 
-      if (deck.name !== payload.name) {
-        deck.name = payload.name
+      // Vérifier si l'utilisateur est autorisé à modifier ce deck
+      if (auth.user?.id === deck.userId) {
+        // Récupérer les données de la requête (nom du deck et les cartes à ajouter)
+        const data = request.only(['name', 'cards'])
+        const payload = await updateDeckValidator.validate(data)
+
+        // Parcourir les cartes à ajouter au deck
+        for (const cardPayload of payload.cards) {
+          // Vérifier si la carte est déjà présente dans le deck
+          const existingCard = deckCards.find(
+            (cardFromDeck) => cardFromDeck.card_id === cardPayload.id
+          )
+          if (existingCard) {
+            // Vérifier si l'ajout de la carte ne dépasse pas la limite de 4 cartes du même type dans le deck
+            if (existingCard.quantity + cardPayload.quantity < 4) {
+              existingCard.quantity += cardPayload.quantity
+              await db
+                .from('card_deck')
+                .where('id', existingCard.id)
+                .update({ quantity: existingCard.quantity })
+              res = true
+              message = 'Deck updated successfully'
+            } else {
+              res = false
+              message = 'Maximum 4 of the same card in a deck'
+              return response.status(500).send({ message })
+            }
+          } else {
+            // Ajouter la carte au deck
+            await db.table('card_deck').insert({
+              card_id: cardPayload.id,
+              deck_id: deck.id,
+              quantity: cardPayload.quantity,
+            })
+            res = true
+            message = 'Deck updated successfully'
+          }
+        }
+
+        // Mettre à jour le nom du deck si nécessaire
+        if (deck.name !== payload.name) {
+          deck.name = payload.name
+          await deck.save()
+          res = true
+        }
+
+        // Envoyer la réponse en fonction du succès ou de l'échec de la mise à jour du deck
+        if (res) {
+          return response.status(200).send({ message })
+        } else {
+          return response.abort({ message })
+        }
+      } else {
+        // L'utilisateur n'est pas autorisé à modifier ce deck
+        return response.abort({ message: 'Unauthorized' }, 403)
       }
-
-      await deck.save()
-      response.status(200).json({
-        message: 'Deck updated sucessfully',
-        deck: deck.name,
-      })
-    } else {
-      response.abort({ message: 'Unauthorized' }, 403)
+    } catch (error) {
+      // Gérer les erreurs
+      console.error(error)
+      return response.status(500).send({ message: 'An error occurred' })
     }
   }
   // DELETE DECK --------------------------------------------------------------------------------
   async deleteDeck({ auth, request, response }: HttpContext) {
-    if (auth.isAuthenticated) {
-      const deck = await Deck.findByOrFail(request.param('id'))
+    const deck = await Deck.findByOrFail('id', request.param('id'))
+
+    if (auth.user?.id === deck.userId) {
       await deck.delete()
     }
   }

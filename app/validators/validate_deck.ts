@@ -9,6 +9,11 @@ export const createDeckValidator = vine.compile(
 export const updateDeckValidator = vine.compile(
   vine.object({
     name: vine.string().trim().maxLength(100),
-    cardsId: vine.number().positive().withoutDecimals(),
+    cards: vine.array(
+      vine.object({
+        id: vine.number().withoutDecimals().positive(),
+        quantity: vine.number().withoutDecimals(),
+      })
+    ),
   })
 )

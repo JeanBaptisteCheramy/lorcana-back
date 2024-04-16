@@ -18,6 +18,7 @@ export default class Deck extends BaseModel {
     pivotForeignKey: 'deck_id',
     relatedKey: 'id',
     pivotRelatedForeignKey: 'card_id',
+    pivotTimestamps: true,
   })
   declare cards: ManyToMany<typeof Card>
 
