@@ -7,6 +7,7 @@ export default function userRouter() {
     .group(() => {
       router.post('create-deck', [DecksController, 'createDeck'])
       router.put('update-deck/:id', [DecksController, 'updateDeck'])
+      router.delete('delete-deck/:id', [DecksController, 'deleteDeck'])
     })
     .use(middleware.auth())
 }

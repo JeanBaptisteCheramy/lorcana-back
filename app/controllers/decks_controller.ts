@@ -127,6 +127,9 @@ export default class DecksController {
 
     if (auth.user?.id === deck.userId) {
       await deck.delete()
+      response.status(200).json({ message: 'Deck deleted successfully.' })
+    } else {
+      return response.abort({ message: 'Unauthorized' }, 403)
     }
   }
 }
