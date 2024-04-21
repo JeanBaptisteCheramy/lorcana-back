@@ -132,4 +132,7 @@ export default class DecksController {
       return response.abort({ message: 'Unauthorized' }, 403)
     }
   }
+  async getAllDecks() {
+    return await Deck.all()
+  }
 }
