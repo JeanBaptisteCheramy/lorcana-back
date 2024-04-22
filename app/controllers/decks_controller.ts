@@ -1,7 +1,9 @@
+import Card from '#models/card'
 import Deck from '#models/deck'
 import { createDeckValidator, updateDeckValidator } from '#validators/validate_deck'
 import { HttpContext } from '@adonisjs/core/http'
 import db from '@adonisjs/lucid/services/db'
+import { ManyToMany } from '@adonisjs/lucid/types/relations'
 
 export default class DecksController {
   // CREATE DECK --------------------------------------------------------------------------------
@@ -132,7 +134,16 @@ export default class DecksController {
       return response.abort({ message: 'Unauthorized' }, 403)
     }
   }
-  async getAllDecks() {
-    return await Deck.all()
+  async getAllDecks({ response }: HttpContext) {
+    const decks = await Deck.query().preload('cards')
+    const decksToDisplay: Array<{ name: string; cards: Array<ManyToMany<typeof Card>> }> = []
+
+    decks.forEach((deck) => {
+      if (deck.cards.length > 0) {
+        const deckToAdd = { name: deck.name, cards: deck.cards }
+        decksToDisplay.push(deckToAdd)
+      }
+    })
+    return { decks: decksToDisplay }
   }
 }

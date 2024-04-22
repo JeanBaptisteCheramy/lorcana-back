@@ -6,7 +6,7 @@ export default class CardsController {
     return await Card.all()
   }
   async getOneCard({ request }: HttpContext) {
-    const card = await Card.dfindByOrFail('id', request.param('id'))
+    const card = await Card.findByOrFail('id', request.param('id'))
     return card
   }
 }
