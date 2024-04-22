@@ -134,16 +134,32 @@ export default class DecksController {
       return response.abort({ message: 'Unauthorized' }, 403)
     }
   }
+  // GET ALL DECKS ------------------------------------------------------------------------------
   async getAllDecks({ response }: HttpContext) {
     const decks = await Deck.query().preload('cards')
-    const decksToDisplay: Array<{ name: string; cards: Array<ManyToMany<typeof Card>> }> = []
+    const decksToDisplay: Array<{
+      id: number
+      name: string
+      cards: Array<ManyToMany<typeof Card>>
+    }> = []
 
     decks.forEach((deck) => {
       if (deck.cards.length > 0) {
-        const deckToAdd = { name: deck.name, cards: deck.cards }
+        const deckToAdd = { id: deck.id, name: deck.name, cards: deck.cards }
         decksToDisplay.push(deckToAdd)
       }
     })
     return { decks: decksToDisplay }
+  }
+  // GET ONE DECK ------------------------------------------------------------------------------
+  async getOneDeck({ request, response }: HttpContext) {
+    const deck = await Deck.query().preload('cards').where('id', request.param('id'))
+    const deckCards: object[] = []
+    deck.forEach((item) => {
+      item.cards.forEach((i) => {
+        deckCards.push(i)
+      })
+    })
+    return deckCards
   }
 }
