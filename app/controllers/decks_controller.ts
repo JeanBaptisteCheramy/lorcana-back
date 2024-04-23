@@ -145,7 +145,13 @@ export default class DecksController {
 
     decks.forEach((deck) => {
       if (deck.cards.length > 0) {
-        const deckToAdd = { id: deck.id, name: deck.name, cards: deck.cards }
+        const deckToAdd = {
+          id: deck.id,
+          name: deck.name,
+          cards: deck.cards,
+          createdAt: deck.createdAt,
+          updatedAt: deck.updatedAt,
+        }
         decksToDisplay.push(deckToAdd)
       }
     })
@@ -153,13 +159,26 @@ export default class DecksController {
   }
   // GET ONE DECK ------------------------------------------------------------------------------
   async getOneDeck({ request, response }: HttpContext) {
+    type DeckTypeHere = {
+      id: number
+      name: string
+      cards: object[]
+    }
+
     const deck = await Deck.query().preload('cards').where('id', request.param('id'))
-    const deckCards: object[] = []
+    const deckName = await db.from('decks').select('name').where('id', request.param('id'))
+    const deckToDisplay: DeckTypeHere = {
+      id: Number(request.param('id')),
+      name: deckName[0].name,
+      cards: [],
+    }
+
     deck.forEach((item) => {
       item.cards.forEach((i) => {
-        deckCards.push(i)
+        deckToDisplay.cards.push(i)
       })
     })
-    return deckCards
+
+    return deckToDisplay
   }
 }
