@@ -5,11 +5,19 @@ import type { HttpContext } from '@adonisjs/core/http'
 
 export default class AuthController {
   async register({ request, response }: HttpContext) {
-    const data = request.body()
-    const payload = await createUserValidator.validate(data)
-    const user = await User.create(payload)
-    const userCollection = await Collection.create({ userId: user.id })
-    response.status(200).json({ user: user, collection: userCollection })
+    try {
+      const data = request.body()
+      const payload = await createUserValidator.validate(data)
+      const user = await User.create(payload)
+      const userCollection = await Collection.create({ userId: user.id })
+      response.status(200).json({ user: user, collection: userCollection })
+    } catch (error) {
+      // Gérer les erreurs ici
+      response.status(500).json({
+        message: "Une erreur s'est produite lors de l'enregistrement de l'utilisateur.",
+        error: error.message,
+      })
+    }
   }
 
   async login({ auth, request, response }: HttpContext) {
