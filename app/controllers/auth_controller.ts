@@ -14,7 +14,8 @@ export default class AuthController {
     } catch (error) {
       response.status(500).json({
         message: 'Something went wrong registering a user',
-        error: error.message,
+        error: error,
+        messages: error.messages,
       })
     }
   }
