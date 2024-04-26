@@ -12,9 +12,8 @@ export default class AuthController {
       const userCollection = await Collection.create({ userId: user.id })
       response.status(200).json({ user: user, collection: userCollection })
     } catch (error) {
-      // Gérer les erreurs ici
       response.status(500).json({
-        message: "Une erreur s'est produite lors de l'enregistrement de l'utilisateur.",
+        message: 'Something went wrong registering a user',
         error: error.message,
       })
     }
