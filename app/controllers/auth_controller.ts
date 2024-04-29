@@ -12,10 +12,10 @@ export default class AuthController {
       const userCollection = await Collection.create({ userId: user.id })
       response.status(200).json({ user: user, collection: userCollection })
     } catch (error) {
+      console.log(error)
+
       response.status(500).json({
-        message: 'Something went wrong registering a user',
-        error: error,
-        messages: error.messages,
+        message: error.code,
       })
     }
   }
