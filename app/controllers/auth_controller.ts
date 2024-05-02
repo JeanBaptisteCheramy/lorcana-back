@@ -25,7 +25,12 @@ export default class AuthController {
     const user = await User.verifyCredentials(email, password)
     await auth.use('web').login(user)
 
-    response.json(`Logged in as ${user.firstName} ${user.lastName}`)
+    response.json({
+      message: `Logged in as ${user.firstName} ${user.lastName}`,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      email: user.email,
+    })
   }
   async logout({ auth, response }: HttpContext) {
     await auth.use('web').logout()
